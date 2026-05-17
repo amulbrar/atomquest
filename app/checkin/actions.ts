@@ -102,4 +102,3 @@ export async function saveQuarterUpdate(data: QuarterUpdateInput) {
   return { success: true, score }
 }
 
-export { getActiveQuarter }

@@ -16,7 +16,11 @@ import {
   escalationCard,
 } from "./teams"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+let _resend: import("resend").Resend | null = null
+function getResend() {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY ?? "placeholder")
+  return _resend
+}
 const FROM = process.env.EMAIL_FROM ?? "AtomQuest Portal <onboarding@resend.dev>"
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 
@@ -48,7 +52,7 @@ async function send({
     payload: JSON.stringify(payload),
   })
 
-  const { error } = await resend.emails.send({ from: FROM, to, subject, html })
+  const { error } = await getResend().emails.send({ from: FROM, to, subject, html })
 
   if (!error) {
     await db
