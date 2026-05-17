@@ -8,6 +8,13 @@ import { GoalApprovedEmail } from "@/emails/goal-approved"
 import { GoalReturnedEmail } from "@/emails/goal-returned"
 import { CheckinReminderEmail } from "@/emails/checkin-reminder"
 import { EscalationEmail } from "@/emails/escalation"
+import {
+  sendTeamsCard,
+  goalSubmittedCard,
+  goalApprovedCard,
+  goalReturnedCard,
+  escalationCard,
+} from "./teams"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.EMAIL_FROM ?? "AtomQuest Portal <onboarding@resend.dev>"
@@ -85,6 +92,10 @@ export async function sendGoalSubmittedNotification(
     type: "goal_submitted",
     payload: { employeeId, sheetId },
   })
+
+  if (mgr.teamsWebhookUrl && mgr.teamsNotifications) {
+    sendTeamsCard(mgr.teamsWebhookUrl, goalSubmittedCard(emp.name, cycle?.fyLabel ?? "", employeeId)).catch(() => {})
+  }
 }
 
 export async function sendGoalApprovedNotification(
@@ -120,6 +131,10 @@ export async function sendGoalApprovedNotification(
     type: "goal_approved",
     payload: { sheetId },
   })
+
+  if (emp.teamsWebhookUrl && emp.teamsNotifications) {
+    sendTeamsCard(emp.teamsWebhookUrl, goalApprovedCard(cycle?.fyLabel ?? "")).catch(() => {})
+  }
 }
 
 export async function sendGoalReturnedNotification(
@@ -157,6 +172,10 @@ export async function sendGoalReturnedNotification(
     type: "goal_returned",
     payload: { sheetId, comment },
   })
+
+  if (emp.teamsWebhookUrl && emp.teamsNotifications) {
+    sendTeamsCard(emp.teamsWebhookUrl, goalReturnedCard(comment, cycle?.fyLabel ?? "")).catch(() => {})
+  }
 }
 
 export async function sendCheckinReminderNotification(
@@ -232,4 +251,8 @@ export async function sendEscalationNotification(
     type: "escalation",
     payload: { ruleId, subjectUserId, ruleName },
   })
+
+  if (target.teamsWebhookUrl && target.teamsNotifications) {
+    sendTeamsCard(target.teamsWebhookUrl, escalationCard(subject.name, ruleName, message)).catch(() => {})
+  }
 }
