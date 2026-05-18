@@ -111,4 +111,32 @@ describe("computeScore", () => {
       })
     ).toBeCloseTo(1.333, 2)
   })
+  it("returns null when actual or target is non-numeric", () => {
+    expect(
+      computeScore({
+        uomType: "numeric",
+        uomDirection: "min",
+        targetValue: "100",
+        actualValue: "abc",
+      })
+    ).toBeNull()
+    expect(
+      computeScore({
+        uomType: "percent",
+        uomDirection: "max",
+        targetValue: "not-a-number",
+        actualValue: "50",
+      })
+    ).toBeNull()
+  })
+  it("clamps overachievement at 1.5", () => {
+    expect(
+      computeScore({
+        uomType: "numeric",
+        uomDirection: "min",
+        targetValue: "100",
+        actualValue: "500",
+      })
+    ).toBe(1.5)
+  })
 })

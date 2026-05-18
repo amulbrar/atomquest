@@ -4,24 +4,9 @@ import {
 } from "@/lib/db/schema"
 import { eq, and, isNull } from "drizzle-orm"
 import { sendEscalationNotification } from "@/lib/notify"
+import { daysSince, getActiveQuarter } from "./rules"
 
-function daysSince(date: Date): number {
-  return Math.floor((Date.now() - date.getTime()) / 86_400_000)
-}
-
-function getActiveQuarter(cycle: {
-  q1Open: string; q1Close: string
-  q2Open: string; q2Close: string
-  q3Open: string; q3Close: string
-  q4Open: string; q4Close: string
-}): "q1" | "q2" | "q3" | "q4" | null {
-  const today = new Date().toISOString().split("T")[0]
-  if (today >= cycle.q1Open && today <= cycle.q1Close) return "q1"
-  if (today >= cycle.q2Open && today <= cycle.q2Close) return "q2"
-  if (today >= cycle.q3Open && today <= cycle.q3Close) return "q3"
-  if (today >= cycle.q4Open && today <= cycle.q4Close) return "q4"
-  return null
-}
+export { daysSince, getActiveQuarter, shouldEscalateNoSubmit } from "./rules"
 
 async function alreadyEscalated(ruleId: string, subjectUserId: string): Promise<boolean> {
   const [ev] = await db
