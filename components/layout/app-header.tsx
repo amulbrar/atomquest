@@ -1,26 +1,9 @@
-import { auth, signOut } from "@/lib/auth/config"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { auth } from "@/lib/auth/config"
 import { RoleSwitcher } from "./role-switcher"
-import { LogOut } from "lucide-react"
+import { UserMenu } from "./user-menu"
 import { db } from "@/lib/db"
 import { cycles } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
-
-const ROLE_BADGE = {
-  admin: "destructive",
-  manager: "secondary",
-  employee: "outline",
-} as const
 
 export async function AppHeader() {
   const session = await auth()
@@ -32,68 +15,47 @@ export async function AppHeader() {
     .where(eq(cycles.isActive, true))
     .limit(1)
 
-  const initials = session.user.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2)
+  const initials =
+    session.user.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) ?? ""
 
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
 
   return (
-    <header className="h-14 border-b flex items-center justify-between px-4 bg-background shrink-0">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-sm">AtomQuest Portal</span>
-          {activeCycle && (
-            <Badge variant="secondary" className="text-xs">
-              {activeCycle.fyLabel}
-            </Badge>
-          )}
+    <header className="h-16 border-b border-border/70 flex items-center justify-between px-5 md:px-8 bg-background/80 backdrop-blur-md shrink-0 sticky top-0 z-30">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex items-center justify-center size-7 rounded-sm bg-primary text-primary-foreground font-serif text-[13px] tracking-tight">
+            AQ
+          </span>
+          <span className="font-serif text-[15px] tracking-tight">
+            AtomQuest
+          </span>
         </div>
+        {activeCycle && (
+          <>
+            <span className="h-4 w-px bg-border/80" />
+            <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="size-1.5 rounded-full bg-primary pulse-dot" />
+              {activeCycle.fyLabel} · Active
+            </span>
+          </>
+        )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {isDemoMode && <RoleSwitcher currentEmail={session.user.email!} />}
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full size-8">
-              <Avatar className="size-8">
-                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel className="flex flex-col gap-0.5">
-              <span className="font-medium text-sm">{session.user.name}</span>
-              <span className="text-xs text-muted-foreground font-normal">
-                {session.user.email}
-              </span>
-              <Badge
-                variant={ROLE_BADGE[session.user.role]}
-                className="w-fit mt-1 text-xs"
-              >
-                {session.user.role}
-              </Badge>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <form
-                action={async () => {
-                  "use server"
-                  await signOut({ redirectTo: "/login" })
-                }}
-              >
-                <button type="submit" className="flex items-center gap-2 w-full text-sm">
-                  <LogOut className="size-3.5" />
-                  Sign out
-                </button>
-              </form>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <UserMenu
+          name={session.user.name ?? ""}
+          email={session.user.email ?? ""}
+          role={session.user.role}
+          initials={initials}
+        />
       </div>
     </header>
   )
