@@ -198,10 +198,17 @@ export async function submitGoalSheet() {
     after: { status: "submitted" },
   })
 
-  // Fire notification (non-blocking)
-  sendGoalSubmittedNotification(userId, sheet.id).catch(() => {})
+  // Notify manager (best-effort — never blocks the submission, but
+  // surfaces a warning to the UI if email/Teams dispatch fails so the
+  // user knows their manager may not have been pinged).
+  let warning: string | undefined
+  try {
+    await sendGoalSubmittedNotification(userId, sheet.id)
+  } catch {
+    warning = "Submitted — but notification to your manager could not be sent."
+  }
 
   revalidatePath("/goals")
   revalidatePath("/")
-  return { success: true }
+  return { success: true, warning }
 }

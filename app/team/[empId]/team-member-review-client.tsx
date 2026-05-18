@@ -60,7 +60,10 @@ export function TeamMemberReviewClient({ emp, sheet, goals, thrustAreas, cycleLa
     startTransition(async () => {
       const result = await approveGoalSheet(sheet.id)
       if (result.error) toast.error(result.error)
-      else toast.success("Goals approved and locked!")
+      else {
+        toast.success("Goals approved and locked!")
+        if (result.warning) toast.warning(result.warning)
+      }
     })
   }
 
@@ -72,6 +75,7 @@ export function TeamMemberReviewClient({ emp, sheet, goals, thrustAreas, cycleLa
         toast.error(result.error)
       } else {
         toast.success("Sheet returned for revision")
+        if (result.warning) toast.warning(result.warning)
         setReturnOpen(false)
         setReturnComment("")
       }

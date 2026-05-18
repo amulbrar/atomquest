@@ -48,11 +48,16 @@ export async function approveGoalSheet(sheetId: string) {
     after: { status: "locked" },
   })
 
-  sendGoalApprovedNotification(sheet.employeeId, sheetId).catch(() => {})
+  let warning: string | undefined
+  try {
+    await sendGoalApprovedNotification(sheet.employeeId, sheetId)
+  } catch {
+    warning = "Approved — but notification to the employee could not be sent."
+  }
 
   revalidatePath("/team")
   revalidatePath(`/team/${sheet.employeeId}`)
-  return { success: true }
+  return { success: true, warning }
 }
 
 export async function returnGoalSheet(sheetId: string, comment: string) {
@@ -93,11 +98,16 @@ export async function returnGoalSheet(sheetId: string, comment: string) {
     after: { status: "reopened", comment },
   })
 
-  sendGoalReturnedNotification(sheet.employeeId, sheetId, comment).catch(() => {})
+  let warning: string | undefined
+  try {
+    await sendGoalReturnedNotification(sheet.employeeId, sheetId, comment)
+  } catch {
+    warning = "Returned — but notification to the employee could not be sent."
+  }
 
   revalidatePath("/team")
   revalidatePath(`/team/${sheet.employeeId}`)
-  return { success: true }
+  return { success: true, warning }
 }
 
 export async function managerEditGoal(

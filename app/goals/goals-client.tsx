@@ -196,6 +196,7 @@ export function GoalsClient({
         toast.error(result.error)
       } else {
         toast.success("Goals submitted for approval!")
+        if (result.warning) toast.warning(result.warning)
       }
     })
   }
