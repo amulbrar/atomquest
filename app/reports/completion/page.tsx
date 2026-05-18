@@ -4,6 +4,8 @@ import { users, goalSheets, goals, cycles, quarterUpdates, departments } from "@
 import { eq, and, count, sql } from "drizzle-orm"
 import { AppLayout } from "@/components/layout/app-layout"
 import { CompletionClient } from "./completion-client"
+import { EmptyState } from "@/components/layout/empty-state"
+import { CheckCircle2 } from "lucide-react"
 
 export interface EmployeeCompletion {
   employeeId: string
@@ -31,7 +33,11 @@ export default async function CompletionPage() {
   if (!activeCycle) {
     return (
       <AppLayout role={session.user.role}>
-        <p className="text-muted-foreground">No active cycle.</p>
+        <EmptyState
+          icon={CheckCircle2}
+          title="No active cycle"
+          description="A cycle must be active before completion can be tracked."
+        />
       </AppLayout>
     )
   }
@@ -110,6 +116,18 @@ export default async function CompletionPage() {
       }
     })
   )
+
+  if (employeeCompletions.length === 0) {
+    return (
+      <AppLayout role={session.user.role}>
+        <EmptyState
+          icon={CheckCircle2}
+          title="No approved goal sheets yet"
+          description={`No employees have locked sheets in ${activeCycle.fyLabel}. Once managers approve, completion data will appear here.`}
+        />
+      </AppLayout>
+    )
+  }
 
   return (
     <AppLayout role={session.user.role}>

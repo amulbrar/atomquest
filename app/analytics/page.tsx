@@ -6,6 +6,8 @@ import {
 import { eq, and, avg, count } from "drizzle-orm"
 import { AppLayout } from "@/components/layout/app-layout"
 import { AnalyticsClient } from "./analytics-client"
+import { EmptyState } from "@/components/layout/empty-state"
+import { BarChart3 } from "lucide-react"
 
 export interface QoQPoint { quarter: string; score: number; label: string }
 export interface ThrustSlice { name: string; count: number }
@@ -30,7 +32,11 @@ export default async function AnalyticsPage() {
   if (!activeCycle) {
     return (
       <AppLayout role={session.user.role}>
-        <p className="text-muted-foreground">No active cycle.</p>
+        <EmptyState
+          icon={BarChart3}
+          title="No active cycle"
+          description="Analytics will populate once an admin activates a performance cycle and locked goals exist."
+        />
       </AppLayout>
     )
   }
@@ -155,6 +161,22 @@ export default async function AnalyticsPage() {
       q4Done: q4.done, q4Total: q4.total,
     }
   })
+
+  if (scopedGoals.length === 0) {
+    return (
+      <AppLayout role={session.user.role}>
+        <EmptyState
+          icon={BarChart3}
+          title="No locked goals yet"
+          description={
+            isAdmin
+              ? `No employees have approved goal sheets in ${activeCycle.fyLabel}. Once managers approve, charts will appear here.`
+              : `None of your direct reports have approved goal sheets in ${activeCycle.fyLabel}. Approve at least one to populate this view.`
+          }
+        />
+      </AppLayout>
+    )
+  }
 
   return (
     <AppLayout role={session.user.role}>

@@ -4,6 +4,8 @@ import { goals, goalSheets, users, departments, cycles, quarterUpdates, thrustAr
 import { eq, and } from "drizzle-orm"
 import { AppLayout } from "@/components/layout/app-layout"
 import { AchievementClient } from "./achievement-client"
+import { EmptyState } from "@/components/layout/empty-state"
+import { FileText } from "lucide-react"
 
 export interface AchievementRow {
   goalId: string
@@ -60,7 +62,11 @@ export default async function AchievementReportPage({
   if (!selectedCycle) {
     return (
       <AppLayout role={session.user.role}>
-        <p className="text-muted-foreground">No cycles found.</p>
+        <EmptyState
+          icon={FileText}
+          title="No cycles configured"
+          description="An admin needs to create a performance cycle before reports can be generated."
+        />
       </AppLayout>
     )
   }
@@ -130,6 +136,18 @@ export default async function AchievementReportPage({
       managerComment: u?.managerComment ?? null,
     }
   })
+
+  if (rows.length === 0) {
+    return (
+      <AppLayout role={session.user.role}>
+        <EmptyState
+          icon={FileText}
+          title="No goals to report on yet"
+          description={`No locked goal sheets exist in ${selectedCycle.fyLabel} for ${selectedQuarter.toUpperCase()}. Once managers approve sheets, rows will appear here ready to export.`}
+        />
+      </AppLayout>
+    )
+  }
 
   return (
     <AppLayout role={session.user.role}>
