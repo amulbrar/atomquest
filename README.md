@@ -8,11 +8,14 @@ bonus integration end-to-end on a $0/month stack.
 
 ## Live demo
 
+**→ [atomquest-okr.vercel.app](https://atomquest-okr.vercel.app)**
+
 Hosted on **Vercel + Supabase** (free tiers — $0/month up to ~50K MAU).
 
-When `NEXT_PUBLIC_DEMO_MODE=true`, a role-switcher dropdown appears in the
-top-right corner — pick any seeded user and the portal signs you in
-automatically. No password juggling required to walk all three journeys.
+When `NEXT_PUBLIC_DEMO_MODE=true` (enabled on the live deployment), a
+role-switcher dropdown appears in the top-right corner — pick any seeded
+user and the portal signs you in automatically. No password juggling
+required to walk all three journeys.
 
 | Role     | Email                          | Password        |
 |----------|--------------------------------|-----------------|
