@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useCallback } from "react"
+import { useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@supabase/supabase-js"
 import type { EmployeeCompletion } from "./page"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -11,8 +10,6 @@ import { CheckCircle2, Clock, Minus } from "lucide-react"
 interface Props {
   cycleLabel: string
   employees: EmployeeCompletion[]
-  supabaseUrl: string
-  supabaseAnonKey: string
 }
 
 type CellStatus = "none" | "partial" | "manager_done"
@@ -60,29 +57,36 @@ function Cell({ status }: { status: CellStatus }) {
   )
 }
 
-export function CompletionClient({ cycleLabel, employees, supabaseUrl, supabaseAnonKey }: Props) {
+const POLL_INTERVAL_MS = 15_000
+
+export function CompletionClient({ cycleLabel, employees }: Props) {
   const router = useRouter()
+  const lastRefreshRef = useRef(0)
 
   const refresh = useCallback(() => {
+    lastRefreshRef.current = Date.now()
     router.refresh()
   }, [router])
 
+  // Poll every 15s while the tab is visible, plus refresh on focus.
   useEffect(() => {
-    if (!supabaseUrl || !supabaseAnonKey) return
-    const client = createClient(supabaseUrl, supabaseAnonKey)
-    const channel = client
-      .channel("quarter_updates_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "quarter_updates" },
-        () => refresh()
-      )
-      .subscribe()
+    const tick = () => {
+      if (document.visibilityState === "visible") refresh()
+    }
+    const id = window.setInterval(tick, POLL_INTERVAL_MS)
+
+    const onFocus = () => {
+      if (Date.now() - lastRefreshRef.current > 5_000) refresh()
+    }
+    window.addEventListener("focus", onFocus)
+    document.addEventListener("visibilitychange", onFocus)
 
     return () => {
-      client.removeChannel(channel)
+      window.clearInterval(id)
+      window.removeEventListener("focus", onFocus)
+      document.removeEventListener("visibilitychange", onFocus)
     }
-  }, [supabaseUrl, supabaseAnonKey, refresh])
+  }, [refresh])
 
   // Group by department
   const grouped = employees.reduce<Record<string, EmployeeCompletion[]>>((acc, e) => {
@@ -113,7 +117,7 @@ export function CompletionClient({ cycleLabel, employees, supabaseUrl, supabaseA
         <div>
           <h1 className="text-2xl font-bold">Completion Dashboard</h1>
           <p className="text-muted-foreground text-sm">
-            {cycleLabel} · Live · {done}/{total} quarter check-ins complete
+            {cycleLabel} · Auto-refreshing · {done}/{total} quarter check-ins complete
           </p>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">

@@ -2,20 +2,33 @@
  * Idempotent seed for demo data.
  * Run: pnpm seed
  */
-import "dotenv/config"
+import { config } from "dotenv"
+config({ path: ".env.local" })
+import dns from "dns/promises"
 import postgres from "postgres"
 import { drizzle } from "drizzle-orm/postgres-js"
 import bcrypt from "bcryptjs"
 import * as schema from "../lib/db/schema"
 import { eq, and } from "drizzle-orm"
 
-const client = postgres(
-  process.env.DATABASE_URL_DIRECT ??
-    process.env.DATABASE_URL ??
-    "postgresql://postgres:postgres@localhost:5432/atomquest",
-  { prepare: false }
-)
-const db = drizzle(client, { schema })
+function parseDbUrl(raw: string) {
+  const url = raw.replace(/\?.*$/, "")
+  const m = url.match(/^postgresql?:\/\/([^:@]+):([^@]*)@([^:/]+):?(\d+)?\/(.+)$/)
+  if (!m) throw new Error("Invalid DATABASE_URL")
+  return { username: m[1], password: m[2], host: m[3], port: parseInt(m[4] ?? "5432"), database: m[5] }
+}
+
+let client: ReturnType<typeof postgres>
+let db: ReturnType<typeof drizzle<typeof schema>>
+
+async function initDb() {
+  const { username, password, host, port, database } = parseDbUrl(
+    process.env.DATABASE_URL_DIRECT ?? process.env.DATABASE_URL ?? ""
+  )
+  const [ipv4] = await dns.resolve4(host)
+  client = postgres({ host: ipv4, port, database, username, password, ssl: "require", prepare: false })
+  db = drizzle(client, { schema })
+}
 
 async function upsertDepartment(name: string) {
   const [existing] = await db
@@ -184,6 +197,7 @@ async function addQuarterUpdate(goalId: string, quarter: "q1" | "q2" | "q3" | "q
 }
 
 async function main() {
+  await initDb()
   console.log("🌱 Seeding demo data...")
 
   // Departments
