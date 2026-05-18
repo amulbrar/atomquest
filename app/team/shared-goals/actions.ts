@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requireManager } from "@/lib/auth/guards"
 import { db } from "@/lib/db"
 import { goals, goalSheets, users, cycles } from "@/lib/db/schema"
-import { eq, and, count } from "drizzle-orm"
+import { eq, and, count, sum } from "drizzle-orm"
 import { logAudit } from "@/lib/audit"
 
 export async function pushSharedGoal(data: {
@@ -81,13 +81,23 @@ export async function pushSharedGoal(data: {
       return { error: `Cannot add shared goal to ${recipientId}'s locked sheet` }
     }
 
-    // Check goal limit
-    const [cnt] = await db
-      .select({ c: count() })
+    // Check goal limit + cross-row weightage cap
+    const [agg] = await db
+      .select({ c: count(), wt: sum(goals.weightage) })
       .from(goals)
       .where(eq(goals.sheetId, sheet.id))
-    if ((cnt?.c ?? 0) >= 8) {
+    if ((agg?.c ?? 0) >= 8) {
       return { error: `Employee already has 8 goals` }
+    }
+    const existingWt = Number(agg?.wt ?? 0)
+    if (existingWt + data.weightage > 100) {
+      const [recipient] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, recipientId))
+      return {
+        error: `Adding this goal would exceed 100% on ${recipient?.name ?? "recipient"}'s sheet (current: ${existingWt}%, adding: ${data.weightage}%)`,
+      }
     }
 
     const isPrimary = recipientId === primaryId
@@ -107,7 +117,7 @@ export async function pushSharedGoal(data: {
         lockedFields: isPrimary
           ? []
           : ["title", "description", "uom_type", "uom_direction", "target_value", "target_date"],
-        sortOrder: cnt?.c ?? 0,
+        sortOrder: agg?.c ?? 0,
       })
       .returning()
 
