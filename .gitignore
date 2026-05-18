@@ -40,3 +40,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude / ai tooling
+.claude/
+CLAUDE.md
+.mcp.json
+.cursor/
+.cursorrules
+.aider*
+.github/copilot-instructions.md
